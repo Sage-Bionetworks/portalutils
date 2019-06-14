@@ -8,6 +8,9 @@
 #'study_name_col     : Name of the column in the Study Table that contains the Study Names
 #'study_id_col       : Name of the column in the Study Table that contains the Study Synapse IDs
 #'study_fileview_col : Name of the column in the Study Table that contains the Fileview IDs for each study
+#'which_studies : editing the whole set of studies is prone to errors due to lack of access to subsets of files, etc. 
+#'to specify a set of studies instead of the whole gamut, pass in a vector of studyIds here
+#'
 
 #'This function tests for the following conditions:
 #'Each study must be a single row in the Study table
@@ -26,9 +29,15 @@ library(pbmcapply)
 cores <- detectCores()
 synLogin()
 
-addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, study_id_col, study_fileview_col){
+addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, study_id_col, study_fileview_col, which_studies = NULL){
   
-  query <- paste0('select ', study_name_col,',',study_id_col,',',study_fileview_col,' from ',study_table_id,' where projectFileviewId is not null')
+  if(!is.null(which_studies)){
+  query <- paste0('select ', study_name_col,',',study_id_col,',',study_fileview_col,' from ',
+                  study_table_id," where projectFileviewId is not null and ",study_id_col," in ('", paste0(which_studies, collapse = "','"),"')")
+  }else{
+    query <- paste0('select ', study_name_col,',',study_id_col,',',study_fileview_col,' from ',
+                    study_table_id," where projectFileviewId is not null")
+  }
   foo <- synTableQuery(query)$asDataFrame()
   
   if(nrow(foo) != length(unique(foo$projectFileviewId))){ ##check for a 1:1 mapping between studies and fileviews
@@ -41,7 +50,7 @@ addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, stu
     
   }else{
     
-    pbmclapply(foo$id, function(x){
+    lapply(foo$id, function(x){
       print(x)
       fv <- foo$projectFileviewId[foo$id == x]  ##get fileview id for study x
       name <- foo$projectName[foo$id == x]  ##get name for study x
@@ -77,11 +86,12 @@ addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, stu
       }else{
         print(paste0("No files associated with project ", x, "."))
       }
-    }, mc.cores = cores)
+    })
   }
 }
 
 addStudyIdAndNameToFileAnnotations(study_table_id = "syn16787123",
                                    study_name_col = "projectName",
                                    study_id_col = "id",
-                                   study_fileview_col = "projectFileviewId") 
+                                   study_fileview_col = "projectFileviewId",
+                                   which_studies = c("syn5714290")) 
