@@ -3,16 +3,15 @@
 #'addStudyIdAndNameToFileAnnotations takes a portal Study Table - example: syn16787123 -
 #'and annotates files with the studyName and studyId for that study.
 #'
-#'In order to do this the function requires 4 arguments:
+#'In order to do this the function requires 5 arguments:
 #'study_table_id     : Synapse ID of the Study Table
 #'study_name_col     : Name of the column in the Study Table that contains the Study Names
 #'study_id_col       : Name of the column in the Study Table that contains the Study Synapse IDs
 #'study_fileview_col : Name of the column in the Study Table that contains the Fileview IDs for each study
-#'
+
 #'This function tests for the following conditions:
 #'Each study must be a single row in the Study table
-#'Each study must have a fileview id associated - even if there is no data for that study
-#'The fileviews can be empty if there is no data
+#'note - The fileviews can be empty if there is no data
 #'Each fileview must be associated with only one study 
 #'If studyId and studyName are in the fileview schemas - if not, it adds them
 #'
@@ -23,6 +22,8 @@
 #'
 
 library(synapser)
+library(pbmcapply)
+cores <- detectCores()
 synLogin()
 
 addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, study_id_col, study_fileview_col){
@@ -40,12 +41,15 @@ addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, stu
     
   }else{
     
-    lapply(foo$id, function(x){
+    pbmclapply(foo$id, function(x){
       print(x)
       fv <- foo$projectFileviewId[foo$id == x]  ##get fileview id for study x
       name <- foo$projectName[foo$id == x]  ##get name for study x
+      tryCatch({
       bar <- synTableQuery(paste0('select * from ',fv)) ##get fileview data for study x
-      
+      }, error=function(cond){
+        print(paste0("check fileview, ",fv," - appears broken"))
+      })
       df <- bar$asDataFrame()
       
       if(!c("studyId") %in% colnames(df)){ ##add studyId to fileview schema if not there already
@@ -65,14 +69,15 @@ addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, stu
       }
              
       if(nrow(df)>0){     ##check for files to annotate
+        
       df$studyId <- x #add studyId to file annotations 
       df$studyName <- name ##ad studyName to file annotations
-      
-      synStore(Table(bar$tableId, df)) ##store new annotations for files for study x
+      try(synStore(Table(bar$tableId, df))) ##store new annotations for files for study x,
+ 
       }else{
         print(paste0("No files associated with project ", x, "."))
       }
-    })
+    }, mc.cores = cores)
   }
 }
 
