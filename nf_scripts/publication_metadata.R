@@ -1,5 +1,5 @@
 library(tidyverse)
-
+library(easyPubMed)
 ##read in publication data
 data <- read_csv("example_publications_table.csv") 
 
@@ -53,6 +53,6 @@ data <- data %>% select(-title, -journal, -author, -year, -"pmid") %>% left_join
 ##then, manually curate any remaining data and upload via webui or upload programatically 
 ##in particular, journal names are typically not cleanly stored on pubmed
 
-write_csv(data, "example_publications_table_output.csv")
+write_csv(data, "example_publications_table_output.csv", na = "")
 
                          
