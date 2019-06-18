@@ -17,26 +17,27 @@ get_portal_formatted_publication_data <- function(doi){
     print('nothing found for doi')
     return(c("title"=NA, "journal"=NA, "author"=NA, "year"=NA, "pmid" = NA, "doi"=doi))
   }else{ ##otherwise look for all data
-  pmids <- fetch_pubmed_data(pmids, format = "xml", retmax = 1) %>% 
+  pmids <- fetch_pubmed_data(pmids, format = "xml", retmax = 1) 
+  
+  pmids_df <- pmids %>% 
     article_to_df
   
   ##extract author, collapse using | for portal data
-  author <- pmids %>% tidyr::unite(name, firstname, lastname, sep = " ")
+  author <- pmids_df %>% tidyr::unite(name, firstname, lastname, sep = " ")
   author <- author$name %>% str_c(., collapse = " | ")
   
   ##extract other metadata
   ##journal names are not stored on pubmed in title case, so let's do that
-  journal <- pmids$journal %>% unique %>% tools::toTitleCase(.)
+  journal <- pmids_df$journal %>% unique %>% tools::toTitleCase(.)
   
   ##title case not typically used for scientific publications
-  title <- pmids$title %>% unique
+  title <- pmids_df$title %>% unique
   
   
   ## default function doesn't get accurate publication date, but rather the listing date. use different function to get publication year:
-  curr_PM_record <- pmids[1]
-  year <- custom_grep(curr_PM_record, tag = "PubDate")[1] %>% str_extract(., "<Year>\\d+") %>% str_extract('\\d+')
+  year <- custom_grep(pmids, tag = "PubDate")[1] %>% str_extract(., "<Year>\\d+") %>% str_extract('\\d+')
   
-  pmid <- pmids$pmid %>% unique
+  pmid <- pmids_df$pmid %>% unique
   
   if(length(journal)>1 | length(title)>1 | length(year)>1 | length(author)>1 | length(pmid)>1){
     print("one to many mappings detected - manually curate")
@@ -58,8 +59,3 @@ data <- data %>% select(-title, -journal, -author, -year, -"pmid") %>% left_join
 
 write_csv(data, "example_publications_table_output.csv", na = "")
 
-                 
-foo <- get_pubmed_ids("29893754")
-
-pmids <- fetch_pubmed_data(foo, format = "xml", retmax = 1) %>% 
-  article_to_df
