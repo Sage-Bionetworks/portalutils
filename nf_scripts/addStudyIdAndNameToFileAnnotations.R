@@ -90,8 +90,10 @@ addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, stu
   }
 }
 
+
+#example:
 addStudyIdAndNameToFileAnnotations(study_table_id = "syn16787123",
                                    study_name_col = "projectName",
                                    study_id_col = "id",
                                    study_fileview_col = "projectFileviewId",
-                                   which_studies = c("syn5714290")) 
+                                   which_studies = c("syn11374337")) 
