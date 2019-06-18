@@ -31,7 +31,10 @@ get_portal_formatted_publication_data <- function(doi){
   ##title case not typically used for scientific publications
   title <- pmids$title %>% unique
   
-  year <- pmids$year %>% unique
+  
+  ## default function doesn't get accurate publication date, but rather the listing date. use different function to get publication year:
+  curr_PM_record <- pmids[1]
+  year <- custom_grep(curr_PM_record, tag = "PubDate")[1] %>% str_extract(., "<Year>\\d+") %>% str_extract('\\d+')
   
   pmid <- pmids$pmid %>% unique
   
@@ -55,4 +58,8 @@ data <- data %>% select(-title, -journal, -author, -year, -"pmid") %>% left_join
 
 write_csv(data, "example_publications_table_output.csv", na = "")
 
-                         
+                 
+foo <- get_pubmed_ids("29893754")
+
+pmids <- fetch_pubmed_data(foo, format = "xml", retmax = 1) %>% 
+  article_to_df
