@@ -5,8 +5,8 @@ gs_auth()
 
 ##this script assumes you have settled your table's schema already
 
-tableId <- 'syn16858331'
-query <- "SELECT id, accessType, accessTeam FROM syn16858331 where benefactorId = 'syn20380009'"
+tableId <- '<fileview id>'
+query <- sprintf("SELECT * FROM %s", tableId)
 title <- sprintf("annotation_%s", Sys.time())
 
 tab <- synTableQuery(query)$asDataFrame()
