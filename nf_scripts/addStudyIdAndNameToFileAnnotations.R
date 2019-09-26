@@ -25,8 +25,6 @@
 #'
 
 library(synapser)
-library(pbmcapply)
-cores <- detectCores()
 synLogin()
 
 addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, study_id_col, study_fileview_col, which_studies = NULL){
@@ -90,10 +88,30 @@ addStudyIdAndNameToFileAnnotations<-function(study_table_id, study_name_col, stu
   }
 }
 
+##look for files where files aren't represented in studies
+studies <- synTableQuery("SELECT distinct studyName, studyId FROM syn16787123")$asDataFrame()
+files <- synTableQuery("SELECT distinct studyName, studyId FROM syn16858331")$asDataFrame()
+
+ids <-files$studyName[!files$studyName %in% studies$studyName]
 
 #example:
 addStudyIdAndNameToFileAnnotations(study_table_id = "syn16787123",
                                    study_name_col = "projectName",
                                    study_id_col = "id",
                                    study_fileview_col = "projectFileviewId",
-                                   which_studies = c("syn11374337")) 
+                                   which_studies = ids) 
+
+##look for files where studies aren't represented in files
+files <- synTableQuery("SELECT distinct projectId FROM syn16858331 where studyId is null")$asDataFrame()
+
+ids <-files$projectId[files$projectId %in% studies$studyId]
+
+addStudyIdAndNameToFileAnnotations(study_table_id = "syn16787123",
+                                   study_name_col = "projectName",
+                                   study_id_col = "id",
+                                   study_fileview_col = "projectFileviewId",
+                                   which_studies = ids) 
+
+df <- synTableQuery('SELECT author, title, journal, pmid, year FROM syn16857542')$asDataFrame()
+df <- synTableQuery("SELECT author, title, journal, pmid, 'year' FROM syn16857542")$asDataFrame()
+colnames(df)

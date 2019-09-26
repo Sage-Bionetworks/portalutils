@@ -4,6 +4,7 @@ library(easyPubMed)
 data <- read_csv("example_publications_table.csv") 
 
 
+
 ##function that uses a doi 
 ##(other search terms, such as PMID, PMCID, etc will also work as input but will error if retrieve >1 record )
 ##and gets journal,author, title, year, pmid, and formats for NF Data Portal
