@@ -1,4 +1,7 @@
-library(synapser)
+library(reticulate)
+
+import('synapseclient')
+
 library(tidyverse)
 synLogin()
 
