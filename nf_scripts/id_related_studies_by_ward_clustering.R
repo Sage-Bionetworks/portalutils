@@ -1,7 +1,12 @@
 library(tidyverse)
 library(textmineR)
+library(synapser)
+synLogin()
 
-studies <- readr::read_csv("forsimilarity_test.csv") %>% select(-relatedStudies)
+
+studies <- synTableQuery("select * from syn16787123")$filepath %>% 
+  readr::read_csv(.) %>% 
+  select(-relatedStudies)
 
 dtm <- CreateDtm(doc_vec = studies$summary,
                  doc_names = studies$studyId,
