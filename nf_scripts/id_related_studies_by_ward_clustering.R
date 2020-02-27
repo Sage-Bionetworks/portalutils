@@ -1,13 +1,18 @@
+#this script largely adapted from textmineR vignette
+#https://cran.r-project.org/web/packages/textmineR/vignettes/b_document_clustering.html
+
 library(tidyverse)
 library(textmineR)
 library(synapser)
 synLogin()
 
-
+##query the study table
 studies <- synTableQuery("select * from syn16787123")$filepath %>% 
   readr::read_csv(.) %>% 
   select(-relatedStudies)
 
+
+##create a document object using the study summaries
 dtm <- CreateDtm(doc_vec = studies$summary,
                  doc_names = studies$studyId,
                  ngram_window = c(1,2),
@@ -33,6 +38,8 @@ cdist <- as.dist(1 - csim)
 
 hc <- hclust(cdist, "ward.D")
 
+#break into 20 clusters - this probably should be changed for smaller or larger numbers of studies
+#I was targeting ~3-4 related studies per cluster, this seemed to work fairly well 
 clustering <- cutree(hc, 20)
 
 plot(hc, main = "Hierarchical clustering of NF Study Summaries",
@@ -66,7 +73,7 @@ cluster_summary
 similar_studies <- clustering %>% 
   as_tibble(rownames = "studyId") %>% 
   group_by(value) %>%
-  summarise(relatedStudies = toString(studyId)) %>%
+  summarise(relatedStudies = toString(studyId)) %>% ##currently the portals parse a comma-separated list.
   ungroup()
 
 ids <- clustering %>% 
@@ -76,4 +83,7 @@ ids <- clustering %>%
 
 studies <- left_join(studies, ids)
 
+##write out and inspect, update studies table interactively
+##currently the portals parse a comma-separated list.
+##when portals eventually support parsing of stringLists, probably better to use those.
 write_csv(studies, "relatedStudies.csv", na = '')
