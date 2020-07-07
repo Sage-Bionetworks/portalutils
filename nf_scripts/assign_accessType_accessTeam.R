@@ -1,11 +1,8 @@
-library(reticulate)
-
-import('synapseclient')
-
+library(synapser)
 library(tidyverse)
 synLogin()
 
-fileview_id <- "syn16858331"
+fileview_id <- "syn13363852"
 
 fv <- synTableQuery(sprintf("SELECT * FROM %s", fileview_id)) ##get fileview with all benefactorIds
 tab <-as.data.frame(fv) ##get fileview with all benefactorIds
@@ -57,4 +54,5 @@ if(remove_cols == F){
 }
 
 synStore(Table(fileview_id, tab_access))
+
 

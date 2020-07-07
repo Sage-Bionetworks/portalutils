@@ -38,15 +38,21 @@ cdist <- as.dist(1 - csim)
 
 hc <- hclust(cdist, "ward.D")
 
+## THIS STEP IS SUPER IMPORTANT
+## define the number of desired clusters
+n_clust <- 28
+
+## then plot the cluster borders to define them
+## then change the number of clusters if the clusters are too large
+## probably 2-3 studies per cluster is ideal
 #break into 20 clusters - this probably should be changed for smaller or larger numbers of studies
 #I was targeting ~3-4 related studies per cluster, this seemed to work fairly well 
-clustering <- cutree(hc, 20)
+clustering <- cutree(hc, n_clust)
 
 plot(hc, main = "Hierarchical clustering of NF Study Summaries",
      ylab = "", xlab = "", yaxt = "n")
 
-rect.hclust(hc, 20, border = "red")
-
+rect.hclust(hc, n_clust, border = "red")
 
 p_words <- colSums(dtm) / sum(dtm)
 
@@ -71,15 +77,16 @@ cluster_summary <- data.frame(cluster = unique(clustering),
 cluster_summary
 
 similar_studies <- clustering %>% 
-  as_tibble(rownames = "studyId") %>% 
-  group_by(value) %>%
-  summarise(relatedStudies = toString(studyId)) %>% ##currently the portals parse a comma-separated list.
-  ungroup()
+  as_tibble(rownames = "relatedStudies") 
 
-ids <- clustering %>% 
-  as_tibble(rownames = "studyId") %>% 
-  left_join(similar_studies) %>% 
-  select(-value)
+source_studies <-  clustering %>% 
+  as_tibble(rownames = "studyId") 
+
+ids <- full_join(similar_studies,source_studies) %>% 
+  filter(relatedStudies != studyId) %>% #remove self-association
+  group_by(studyId) %>%
+  summarise(relatedStudies = toString(relatedStudies)) %>% ##currently the portals parse a comma-separated list.
+  ungroup() 
 
 studies <- left_join(studies, ids)
 
