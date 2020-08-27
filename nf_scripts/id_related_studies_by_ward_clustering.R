@@ -1,4 +1,4 @@
-#this script largely adapted from textmineR vignette
+#this script adapted from textmineR vignette
 #https://cran.r-project.org/web/packages/textmineR/vignettes/b_document_clustering.html
 
 library(tidyverse)
@@ -9,7 +9,7 @@ synLogin()
 ##query the study table
 studies <- synTableQuery("select * from syn16787123")$filepath %>% 
   readr::read_csv(.) %>% 
-  select(-relatedStudies)
+  select(-relatedStudies) 
 
 
 ##create a document object using the study summaries
@@ -85,12 +85,12 @@ source_studies <-  clustering %>%
 ids <- full_join(similar_studies,source_studies) %>% 
   filter(relatedStudies != studyId) %>% #remove self-association
   group_by(studyId) %>%
-  summarise(relatedStudies = toString(relatedStudies)) %>% ##currently the portals parse a comma-separated list.
+  summarise(relatedStudies = jsonlite::toJSON(relatedStudies)) %>% ##currently the portals parse a comma-separated list.
   ungroup() 
 
-studies <- left_join(studies, ids)
+studies_updated <- left_join(studies, ids)
 
 ##write out and inspect, update studies table interactively
 ##currently the portals parse a comma-separated list.
 ##when portals eventually support parsing of stringLists, probably better to use those.
-write_csv(studies, "relatedStudies.csv", na = '')
+write_csv(studies_updated, "relatedStudies.csv", na = '')
